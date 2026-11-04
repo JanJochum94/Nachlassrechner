@@ -30,7 +30,7 @@ header,main{display:none!important}
 </style></head><body>
 <header><h1>▦ Nachlassrechner</h1><p>Einfach wie Excel · Eingaben lokal auf deinem iPad</p></header><main>
 <section class="panel"><div class="head"><div><h2>Versicherungen und Nachlässe</h2><span class="muted">B, C und G sind bearbeitbar. Für weitere Spalten seitlich wischen.</span></div><div class="actions"><button id="print" type="button">PDF / Drucken</button><button id="csv" type="button">CSV exportieren</button><button id="reset" type="button">Zurücksetzen</button></div></div>
-<div class="scroll"><table><thead><tr><th>A · Sachversicherung</th><th>B · Preis €</th><th>C · Nachlass</th><th>D · Preis nach Abzügen</th><th>E · Nach Flex</th><th>F · Flex-Abzug €</th><th>G · Flex-Nachlass</th></tr></thead><tbody>
+<div class="scroll"><table><thead><tr><th>Sachversicherung</th><th>Preis €</th><th>Nachlass</th><th>Preis nach Abzügen</th><th>Nach Flex</th><th>Flex-Abzug €</th><th>Flex-Nachlass</th></tr></thead><tbody>
 <tr><th scope="row">Haftpflicht</th><td><input aria-label="Haftpflicht Preis" data-r="2" data-k="B" inputmode="decimal" value="0,00"></td><td><input aria-label="Haftpflicht Nachlass" data-r="2" data-k="C" inputmode="decimal" value="20,00"> %</td><td id="D2">0,00 €</td><td id="E2">0,00 €</td><td id="F2">0,00 €</td><td><input aria-label="Haftpflicht Flex-Nachlass" data-r="2" data-k="G" inputmode="decimal" value="25,00"> %</td></tr>
 <tr><th scope="row">Hausrat</th><td><input aria-label="Hausrat Preis" data-r="3" data-k="B" inputmode="decimal" value="0,00"></td><td><input aria-label="Hausrat Nachlass" data-r="3" data-k="C" inputmode="decimal" value="20,00"> %</td><td id="D3">0,00 €</td><td id="E3">0,00 €</td><td id="F3">0,00 €</td><td><input aria-label="Hausrat Flex-Nachlass" data-r="3" data-k="G" inputmode="decimal" value="25,00"> %</td></tr>
 <tr><th scope="row">Haushalt-Glas</th><td><input aria-label="Haushalt-Glas Preis" data-r="4" data-k="B" inputmode="decimal" value="0,00"></td><td><input aria-label="Haushalt-Glas Nachlass" data-r="4" data-k="C" inputmode="decimal" value="20,00"> %</td><td id="D4">0,00 €</td><td id="E4">0,00 €</td><td id="F4">0,00 €</td><td><input aria-label="Haushalt-Glas Flex-Nachlass" data-r="4" data-k="G" inputmode="decimal" value="25,00"> %</td></tr>
@@ -55,7 +55,7 @@ function format(n){return n.toLocaleString("de-DE",{minimumFractionDigits:2,maxi
 function euro(n){return format(n)+" €";}
 function parse(s){s=String(s).trim().replace(/\s/g,"");if(s.indexOf(",")>=0)s=s.replace(/\./g,"").replace(",",".");return s===""?0:Number(s);}
 function show(id,n){var el=document.getElementById(id);if(el)el.textContent=euro(n);}
-function calc(){var sumB=0,sumE=0,extra=0;rows.forEach(function(r){var d=data[r][0]*(1-data[r][1]/100),e=d*(1-data[r][2]/100),f=d-e;show("D"+r,d);show("E"+r,e);show("F"+r,f);if(r===11)extra=d;else{sumB+=data[r][0];sumE+=e;}});show("B8",sumB);show("E8",sumE);show("E9",sumE/12);show("E12",sumE+extra);show("E13",(sumE+extra)/12);show("year",sumE);show("month",sumE/12);show("total",(sumE+extra)/12);}
+function calc(){var sumB=0,sumE=0,extra=0;rows.forEach(function(r){var d=data[r][0]*(1-data[r][1]/100),f=Math.floor((d*data[r][2]/100)+1e-9),e=d-f;show("D"+r,d);show("E"+r,e);show("F"+r,f);if(r===11)extra=d;else{sumB+=data[r][0];sumE+=e;}});show("B8",sumB);show("E8",sumE);show("E9",sumE/12);show("E12",sumE+extra);show("E13",(sumE+extra)/12);show("year",sumE);show("month",sumE/12);show("total",(sumE+extra)/12);}
 function save(){try{localStorage.setItem(key,JSON.stringify(data));}catch(e){document.getElementById("status").textContent="Achtung: Dieser Browser kann Eingaben nicht speichern.";}}
 function sync(){Array.prototype.forEach.call(inputs,function(el){var r=Number(el.dataset.r),k={B:0,C:1,G:2}[el.dataset.k];el.value=format(data[r][k]);});calc();}
 try{var old=JSON.parse(localStorage.getItem(key)||"null");if(old)rows.forEach(function(r){if(Array.isArray(old[r])&&old[r].length===3&&old[r].every(function(n){return typeof n==="number"&&isFinite(n);}))data[r]=old[r];});}catch(e){}
@@ -66,7 +66,7 @@ var names=["Haftpflicht","Hausrat","Haushalt-Glas","Unfall","Wohngebäude","Reis
 var report=document.getElementById("print-report");
 var sumB=0,sumE=0,extra=0;
 var body=rows.map(function(r,i){
-var raw=data[r][0],disc=data[r][1],flex=data[r][2],d=raw*(1-disc/100),e=d*(1-flex/100),f=d-e;
+var raw=data[r][0],disc=data[r][1],flex=data[r][2],d=raw*(1-disc/100),f=Math.floor((d*flex/100)+1e-9),e=d-f;
 if(r===11)extra=d;else{sumB+=raw;sumE+=e;}
 return '<tr><td>'+names[i]+'</td><td>'+euro(raw)+'</td><td>'+format(disc)+' %</td><td>'+euro(d)+'</td><td>'+euro(e)+'</td><td>'+euro(f)+'</td><td>'+format(flex)+' %</td></tr>';
 }).join("");
@@ -79,7 +79,7 @@ report.innerHTML='<div class="report-header"><div><div class="report-headline">N
 '<p class="report-footer">Berechnung nach den hinterlegten Regeln des Nachlassrechners. Gesamt jährlich inklusive Zusatz: '+euro(total)+'.</p>';
 window.print();
 });
-document.getElementById("csv").addEventListener("click",function(){var lines=[["Zeile","Versicherung","Preis","Nachlass %","Preis nach Abzug","Nach Flex","Flex-Abzug","Flex %"].join(";")];rows.forEach(function(r,i){var d=data[r][0]*(1-data[r][1]/100),e=d*(1-data[r][2]/100);lines.push([r,["Haftpflicht","Hausrat","Haushalt-Glas","Unfall","Wohngebäude","Reise","Frauentypische Erkrankungen"][i],data[r][0],data[r][1],d,e,d-e,data[r][2]].join(";"));});var a=document.createElement("a"),blob=new Blob(["\ufeff"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"});a.href=URL.createObjectURL(blob);a.download="Nachlassrechner.csv";a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);});
+document.getElementById("csv").addEventListener("click",function(){var lines=[["Zeile","Versicherung","Preis","Nachlass %","Preis nach Abzug","Nach Flex","Flex-Abzug","Flex %"].join(";")];rows.forEach(function(r,i){var d=data[r][0]*(1-data[r][1]/100),f=Math.floor((d*data[r][2]/100)+1e-9),e=d-f;lines.push([r,["Haftpflicht","Hausrat","Haushalt-Glas","Unfall","Wohngebäude","Reise","Frauentypische Erkrankungen"][i],data[r][0],data[r][1],d,e,f,data[r][2]].join(";"));});var a=document.createElement("a"),blob=new Blob(["\ufeff"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"});a.href=URL.createObjectURL(blob);a.download="Nachlassrechner.csv";a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);});
 sync();
 })();
 </script></body></html>
